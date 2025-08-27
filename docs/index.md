@@ -9,3 +9,4 @@ List of contents:
 - Open API
   - [Open API Deals](./openapi/deals.yaml)
 - [API Guidelines](202508261830_docs_api_guidelines.md)
+- [Operations Guide (Ops)](202508261840_docs_ops.md)
