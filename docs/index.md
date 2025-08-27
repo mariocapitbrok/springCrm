@@ -8,3 +8,4 @@ List of contents:
   - [Decisions ADR-0001: Adopt DDD + Clean Architecture (Modular Monolith)](./decisions//202508261819_docs_decisions_adr_0001_adopt_ddd_clean_architecture.md)
 - Open API
   - [Open API Deals](./openapi/deals.yaml)
+- [API Guidelines](202508261830_docs_api_guidelines.md)
