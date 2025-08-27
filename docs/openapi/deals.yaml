@@ -1,0 +1,204 @@
+openapi: 3.1.0
+title: CRM Deals API (Stub)
+summary: Minimal stub for /api/deals endpoints used by the Sales context
+version: 0.1.0
+
+info:
+  title: CRM Deals API (Stub)
+  version: 0.1.0
+  summary: Minimal stub for /api/deals endpoints used by the Sales context
+  description: |
+    This is a starter OpenAPI spec for the **Sales** context, covering the
+    `/api/deals` collection. It is intentionally minimal and will be expanded
+    as the implementation evolves. Errors use **RFC-7807 Problem+JSON**.
+servers:
+  - url: http://localhost:8080
+    description: Local dev server
+
+paths:
+  /api/deals:
+    get:
+      operationId: listDeals
+      tags: [Deals]
+      summary: List deals (paginated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: 1-based page number
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: size
+          in: query
+          description: Page size (items per page)
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - name: sort
+          in: query
+          description: Sort by field (e.g., `createdAt,desc`)
+          required: false
+          schema: { type: string }
+        - name: q
+          in: query
+          description: Optional search query (implementation-defined)
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Page of deals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DealPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+    post:
+      operationId: createDeal
+      tags: [Deals]
+      summary: Create a new deal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DealCreateRequest'
+      responses:
+        '201':
+          description: Deal created
+          headers:
+            Location:
+              description: Absolute URL of the created resource
+              schema: { type: string, format: uri }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deal'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Request malformed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Resource conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnprocessableEntity:
+      description: Validation failed (DTO-level)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ServerError:
+      description: Unexpected error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC-7807 Problem Details object
+      properties:
+        type: { type: string, format: uri, nullable: true }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string, nullable: true }
+        instance: { type: string, format: uri, nullable: true }
+        errors:
+          description: Optional field validation details
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+      required: [title, status]
+
+    DealId:
+      type: string
+      description: Stable identifier of a Deal (UUID recommended)
+      example: "d4a1b2c3-4e5f-6789-8abc-1234567890de"
+
+    Money:
+      type: object
+      properties:
+        amount: { type: number, format: double }
+        currency: { type: string, minLength: 3, maxLength: 3, example: "USD" }
+      required: [amount, currency]
+
+    DealStage:
+      type: string
+      enum: [NEW, QUALIFIED, PROPOSAL, WON, LOST]
+      default: NEW
+
+    Deal:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/DealId' }
+        title: { type: string }
+        amount: { $ref: '#/components/schemas/Money' }
+        stage: { $ref: '#/components/schemas/DealStage' }
+        ownerId: { type: string, description: User ID of owner }
+        companyId: { type: string, nullable: true }
+        contactId: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, title, amount, stage, ownerId, createdAt, updatedAt]
+
+    DealCreateRequest:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        amount: { $ref: '#/components/schemas/Money' }
+        stage: { $ref: '#/components/schemas/DealStage' }
+        ownerId: { type: string }
+        companyId: { type: string, nullable: true }
+        contactId: { type: string, nullable: true }
+      required: [title, amount, ownerId]
+
+    PageMetadata:
+      type: object
+      properties:
+        page: { type: integer, minimum: 1 }
+        size: { type: integer, minimum: 1 }
+        totalElements: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+      required: [page, size, totalElements, totalPages]
+
+    DealPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deal'
+        page: { $ref: '#/components/schemas/PageMetadata' }
+      required: [content, page]
+
+tags:
+  - name: Deals
+    description: Sales deals lifecycle
+
